@@ -1,0 +1,14 @@
+﻿services:
+  enea-mainapi:
+    image: enea-mainapi
+    build:
+      context: .
+      dockerfile: Api/Main-Api/Dockerfile
+  enea-postgresql:
+    image: postgres
+    environment:
+      POSTGRES_USER: enea
+      POSTGRES_PASSWORD: enea
+      POSTGRES_DB: enea
+    ports:
+        - "5432:5432"
