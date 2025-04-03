@@ -1,0 +1,29 @@
+﻿@using Generated.Client
+@typeparam T
+@attribute [StreamRendering]
+
+<Card>
+    <CardHeader>@Title</CardHeader>
+    <CardBody Padding="Padding.Is0">
+        <Table Bordered Hoverable>
+            <TableHeader>
+                <TableRow>
+                    @foreach (var column in Columns)
+                    {
+                        <TableHeaderCell>@column</TableHeaderCell>
+                    }
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                <AsyncListLoader Accessor="Accessor" Render="Render"/>
+            </TableBody>
+        </Table>
+    </CardBody>
+</Card>
+
+@code {
+    [Parameter] public String Title { get; set; }
+    [Parameter] public List<String> Columns { get; set; }
+    [Parameter] public Func<IMyApiClient, Task<ICollection<T>>> Accessor { get; set; }
+    [Parameter] public RenderFragment<T> Render { get; set; }
+}

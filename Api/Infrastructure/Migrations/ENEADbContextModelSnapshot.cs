@@ -22,21 +22,125 @@ namespace Api.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Api.Infrastructure.Models.Charger", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ChargerCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("ChargerGroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CurrentStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChargerGroupId");
+
+                    b.ToTable("Chargers");
+                });
+
+            modelBuilder.Entity("Api.Infrastructure.Models.ChargerEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ChangedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ChargerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EndTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double?>("EnergyConsumed")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("EventType")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("NewStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("OldStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SessionStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double?>("TotalPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChargerId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ChargerEvents");
+                });
+
             modelBuilder.Entity("Api.Infrastructure.Models.ChargerGroup", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2025, 2, 27, 11, 30, 39, 567, DateTimeKind.Local).AddTicks(4464));
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2025, 2, 27, 11, 30, 39, 571, DateTimeKind.Local).AddTicks(3430));
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -50,12 +154,9 @@ namespace Api.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2025, 2, 27, 11, 30, 39, 622, DateTimeKind.Local).AddTicks(4880));
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
@@ -67,9 +168,7 @@ namespace Api.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2025, 2, 27, 11, 30, 39, 622, DateTimeKind.Local).AddTicks(5799));
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -77,6 +176,46 @@ namespace Api.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Api.Infrastructure.Models.Charger", b =>
+                {
+                    b.HasOne("Api.Infrastructure.Models.ChargerGroup", "ChargerGroup")
+                        .WithMany("Chargers")
+                        .HasForeignKey("ChargerGroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChargerGroup");
+                });
+
+            modelBuilder.Entity("Api.Infrastructure.Models.ChargerEvent", b =>
+                {
+                    b.HasOne("Api.Infrastructure.Models.Charger", "Charger")
+                        .WithMany("Events")
+                        .HasForeignKey("ChargerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Api.Infrastructure.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Charger");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Api.Infrastructure.Models.Charger", b =>
+                {
+                    b.Navigation("Events");
+                });
+
+            modelBuilder.Entity("Api.Infrastructure.Models.ChargerGroup", b =>
+                {
+                    b.Navigation("Chargers");
                 });
 #pragma warning restore 612, 618
         }

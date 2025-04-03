@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Api.Infrastructure.Migrations
 {
     [DbContext(typeof(ENEADbContext))]
-    [Migration("20250227103040_Added user")]
-    partial class Addeduser
+    [Migration("20250330074154_fix")]
+    partial class fix
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -34,12 +34,12 @@ namespace Api.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2025, 2, 27, 11, 30, 39, 567, DateTimeKind.Local).AddTicks(4464));
+                        .HasDefaultValue(new DateTime(2025, 3, 30, 7, 41, 53, 41, DateTimeKind.Utc).AddTicks(817));
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2025, 2, 27, 11, 30, 39, 571, DateTimeKind.Local).AddTicks(3430));
+                        .HasDefaultValue(new DateTime(2025, 3, 30, 7, 41, 53, 42, DateTimeKind.Utc).AddTicks(7987));
 
                     b.HasKey("Id");
 
@@ -55,10 +55,9 @@ namespace Api.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2025, 2, 27, 11, 30, 39, 622, DateTimeKind.Local).AddTicks(4880));
+                        .HasDefaultValue(new DateTime(2025, 3, 30, 7, 41, 53, 96, DateTimeKind.Utc).AddTicks(2711));
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
@@ -72,7 +71,7 @@ namespace Api.Infrastructure.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2025, 2, 27, 11, 30, 39, 622, DateTimeKind.Local).AddTicks(5799));
+                        .HasDefaultValue(new DateTime(2025, 3, 30, 7, 41, 53, 96, DateTimeKind.Utc).AddTicks(4325));
 
                     b.HasKey("Id");
 

@@ -11,4 +11,4 @@
       POSTGRES_PASSWORD: enea
       POSTGRES_DB: enea
     ports:
-        - "5432:5432"
+      - "5432:5432"

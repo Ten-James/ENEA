@@ -9,27 +9,27 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AutoMapper" Version="14.0.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.2" />
+        <PackageReference Include="AutoMapper" Version="14.0.0"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.2"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.2">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
-        <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="7.3.0" />
-        <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="7.3.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="7.3.0"/>
+        <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="7.3.0"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="..\..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
+        <Content Include="..\..\.dockerignore">
+            <Link>.dockerignore</Link>
+        </Content>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\BussinesLogic\BussinesLogic.csproj" />
-      <ProjectReference Include="..\Domain\Domain.csproj" />
-      <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+        <ProjectReference Include="..\BussinesLogic\BussinesLogic.csproj"/>
+        <ProjectReference Include="..\Domain\Domain.csproj"/>
+        <ProjectReference Include="..\Infrastructure\Infrastructure.csproj"/>
     </ItemGroup>
 
 </Project>

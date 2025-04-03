@@ -1,0 +1,25 @@
+﻿@page "/Users"
+@using ENEA.WEB.Components.Common
+@using Generated.Client
+@attribute [StreamRendering]
+
+<PageTitle>Users</PageTitle>
+
+<TableCardComponent Title="Users table"
+                    Columns="@List"
+                    Accessor="@(client => client.UserAllAsync())"
+                    Render="Render"/>
+
+@code {
+
+    private readonly List<String> List = new List<String> { "Id", "Name", "Email", "Edit", "Delete" };
+
+    public RenderFragment<UserReadDto> Render => user =>
+        @<TableRow>
+            <TableRowHeader>@user.Id</TableRowHeader>
+            <TableRowCell>@user.Name</TableRowCell>
+            <TableRowCell>@user.Email</TableRowCell>
+            <TableRowCell></TableRowCell>
+            <TableRowCell></TableRowCell>
+        </TableRow>;
+}

@@ -1,14 +1,14 @@
 ﻿using Api.Infrastructure.Models;
 using BussinesLogic.Services;
-using Domain.User;
+using GeneratedDtos;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Main_Api.Controllers;
 
 [Route("/user")]
-public class UserController: BaseApiController<User, UserReadDto, User, UserReadDto, UserReadDto>
+public class UserController : BaseApiController<User, UserReadDto, UserReadDetailDto, UserCreateDto, UserUpdateDto>
 {
-    public UserController(IService<User, UserReadDto, User, UserReadDto, UserReadDto> service) : base(service)
+    public UserController(IService<User, UserReadDto, UserReadDetailDto, UserCreateDto, UserUpdateDto> service) : base(service)
     {
     }
 }
