@@ -1,0 +1,60 @@
+﻿@page "/ChargerGroups/{id:guid}"
+@using System.Text.Json
+@using Generated.Client
+@inject MyApiClient client
+@inject NavigationManager Navigation
+@attribute [StreamRendering]
+@rendermode InteractiveServer
+
+<PageTitle>Charger Group Details</PageTitle>
+
+<AsyncLoader Accessor="LoadChargerGroup">
+    <Loader>
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Animation="Animation.Wave"/>
+    </Loader>
+    <Render>
+        <MudStack>
+            <div>
+                <MudText Typo="Typo.h3">@context.Name</MudText>
+                <CreatedAndUpdated Created="context.CreatedAt" Updated="context.UpdatedAt"/>
+            </div>
+            <MudText Typo="Typo.body1">@context.Address</MudText>
+            <MudText Typo="Typo.body2">@context.Latitude @context.Longitude</MudText>
+            <MudText Typo="Typo.h5">Chargers</MudText>
+            @foreach (var charger in context.Chargers)
+            {
+                @if (charger == null)
+                    continue;
+                <MudText Typo="Typo.body2">@charger!.ChargerCode -> @charger.CurrentStatus</MudText>
+            }
+            <MudStack Row="true">
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="NavigateBack">
+                    Back
+                </MudButton>
+            </MudStack>
+            <Collapse>
+                <Content>
+                    <MudText Typo="Typo.body2" Class="m-5">
+                        <code>
+                            <pre>
+                        @JsonSerializer.Serialize(context, new JsonSerializerOptions { WriteIndented = true })
+                    </pre>
+                        </code>
+
+                    </MudText>
+                </Content>
+            </Collapse>
+        </MudStack>
+    </Render>
+</AsyncLoader>
+
+@code {
+    [Parameter] public Guid id { get; set; }
+
+    private async Task<ChargerGroupReadDetailDto> LoadChargerGroup(IMyApiClient client) => await client.ChargerGroupGET2Async(id);
+
+    private void NavigateBack()
+    {
+        Navigation.NavigateTo("/ChargerGroups");
+    }
+}

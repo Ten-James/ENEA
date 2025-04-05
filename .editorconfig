@@ -110,9 +110,9 @@ dotnet_style_allow_statement_immediately_after_block_experimental = true
 #### C# Coding Conventions ####
 
 # var preferences
-csharp_style_var_elsewhere = false
-csharp_style_var_for_built_in_types = false
-csharp_style_var_when_type_is_apparent = false
+csharp_style_var_elsewhere = true
+csharp_style_var_for_built_in_types = true
+csharp_style_var_when_type_is_apparent = true
 
 # Expression-bodied members
 csharp_style_expression_bodied_accessors = true
@@ -284,7 +284,3 @@ csharp_indent_braces = false
 # Important for your specific issue:
 csharp_indent_continuation_lines = true
 csharp_continuation_indent_size = 4 # Adjust this value as needed
-
-# Parameter wrapping preferences (optional but helpful)
-csharp_preserve_single_line_statements = true
-csharp_preserve_single_line_blocks = true

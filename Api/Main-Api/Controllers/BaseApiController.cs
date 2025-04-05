@@ -1,10 +1,13 @@
 ﻿using Api.Infrastructure.Models;
 using BussinesLogic.Services;
+using Domain;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Main_Api.Controllers;
 
 [Produces("application/json")]
+[Authorize]
 [ApiController]
 public class BaseApiController<T, TReadDto, TDetailDto, TCreateDto, TUpdateDto> : ControllerBase
     where T : EntityBase
@@ -22,9 +25,9 @@ public class BaseApiController<T, TReadDto, TDetailDto, TCreateDto, TUpdateDto> 
     /// <returns>List of entities</returns>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async ValueTask<ActionResult<IEnumerable<TReadDto>>> GetAll()
+    public async ValueTask<ActionResult<PaginationResponse<TReadDto>>> GetAll([FromQuery] PaginationRequest request)
     {
-        return Ok(await _service.GetAllAsync());
+        return Ok(await _service.GetAllAsync(request));
     }
 
     /// <summary>
@@ -37,7 +40,7 @@ public class BaseApiController<T, TReadDto, TDetailDto, TCreateDto, TUpdateDto> 
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async ValueTask<ActionResult<TDetailDto>> GetById(Guid id)
     {
-        TDetailDto result = await _service.GetByIdAsync(id);
+        var result = await _service.GetByIdAsync(id);
         return result == null ? NotFound() : Ok(result);
     }
 
@@ -50,7 +53,7 @@ public class BaseApiController<T, TReadDto, TDetailDto, TCreateDto, TUpdateDto> 
     [ProducesResponseType(StatusCodes.Status201Created)]
     public async ValueTask<ActionResult<TReadDto>> Create([FromBody] TCreateDto dto)
     {
-        TReadDto createdDto = await _service.AddAsync(dto);
+        var createdDto = await _service.AddAsync(dto);
         return CreatedAtAction(nameof(GetById), new { id = createdDto }, createdDto);
     }
 

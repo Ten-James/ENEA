@@ -14,7 +14,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.Delay(500);
         items = await Accessor(client);
         isLoading = false;
     }
@@ -23,9 +22,9 @@
 
 @if (isLoading)
 {
-    <TableRow>
-        <TableRowCell>Loading...</TableRowCell>
-    </TableRow>
+    <tr>
+        <td>Loading...</td>
+    </tr>
 }
 else
 {

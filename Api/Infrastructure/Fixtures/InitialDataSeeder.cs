@@ -12,7 +12,7 @@ public static class InitialDataSeeder
     /// <param name="serviceProvider">The application's service provider</param>
     public static void Initialize(IServiceProvider serviceProvider)
     {
-        using ENEADbContext context = serviceProvider.GetRequiredService<ENEADbContext>();
+        using var context = serviceProvider.GetRequiredService<ENEADbContext>();
 
         // Create the database if it doesn't exist
         context.Database.EnsureCreated();
@@ -26,7 +26,6 @@ public static class InitialDataSeeder
             SeedChargerEvents(context);
         }
 
-        context.SaveChanges();
     }
 
     /// <summary>
@@ -34,9 +33,16 @@ public static class InitialDataSeeder
     /// </summary>
     private static void SeedUsers(ENEADbContext context)
     {
-        List<User> users = new List<User>
+        var users = new List<User>
         {
-            new User { Id = Guid.NewGuid(), Name = "Admin User", Email = "admin@example.com", Password = HashPassword("Admin123!") },
+            new User
+            {
+                Id = Guid.NewGuid(),
+                Name = "Admin User",
+                Email = "admin@example.com",
+                Password = HashPassword("Admin123!"),
+                Role = UserRole.Admin
+            },
             new User { Id = Guid.NewGuid(), Name = "Jan Novák", Email = "jan.novak@example.com", Password = HashPassword("Technician123!") },
             new User { Id = Guid.NewGuid(), Name = "Petr Svoboda", Email = "petr.svoboda@example.com", Password = HashPassword("Technician123!") },
             new User { Id = Guid.NewGuid(), Name = "Jiří Dvořák", Email = "jiri.dvorak@example.com", Password = HashPassword("Customer123!") },
@@ -45,13 +51,21 @@ public static class InitialDataSeeder
         };
 
         // Generate 20 additional random customers
-        Random random = new Random();
-        for (int i = 0; i < 20; i++)
+        var random = new Random();
+        for (var i = 0; i < 20; i++)
         {
-            string firstName = GetRandomFirstName();
-            string lastName = GetRandomLastName();
+            var firstName = GetRandomFirstName();
+            var lastName = GetRandomLastName();
             users.Add(new User { Id = Guid.NewGuid(), Name = $"{firstName} {lastName}", Email = $"{firstName.ToLower()}.{lastName.ToLower()}@example.com" });
         }
+
+        // check for duplicates email
+        var emails = new HashSet<string>();
+        foreach (var user in users.Where(user => !emails.Add(user.Email)))
+        {
+            user.Email = $"{user.Name.ToLower().Replace(" ", ".")}{random.Next(1, 100)}@example.com";
+        }
+
 
         context.Users.AddRange(users);
         context.SaveChanges();
@@ -62,7 +76,7 @@ public static class InitialDataSeeder
     /// </summary>
     private static void SeedChargingStations(ENEADbContext context)
     {
-        List<ChargerGroup> stations = new List<ChargerGroup>
+        var stations = new List<ChargerGroup>
         {
             new ChargerGroup
             {
@@ -115,15 +129,15 @@ public static class InitialDataSeeder
     /// </summary>
     private static void SeedChargers(ENEADbContext context)
     {
-        List<ChargerGroup> stations = context.ChargerGroups.ToList();
-        List<Charger> chargers = new List<Charger>();
+        var stations = context.ChargerGroups.ToList();
+        var chargers = new List<Charger>();
 
         // Generate 2-4 chargers for each station
-        foreach (ChargerGroup station in stations)
+        foreach (var station in stations)
         {
-            int chargerCount = new Random().Next(2, 5); // 2-4 chargers per station
+            var chargerCount = new Random().Next(2, 5); // 2-4 chargers per station
 
-            for (int i = 1; i <= chargerCount; i++)
+            for (var i = 1; i <= chargerCount; i++)
             {
                 chargers.Add(new Charger { Id = Guid.NewGuid(), ChargerCode = $"{station.Name.Substring(0, 3).ToUpper()}-{i:D2}", ChargerGroupId = station.Id, CurrentStatus = GetRandomStatus() });
             }
@@ -138,30 +152,30 @@ public static class InitialDataSeeder
     /// </summary>
     private static void SeedChargerEvents(ENEADbContext context)
     {
-        List<Charger> chargers = context.Chargers.ToList();
-        List<User> users = context.Users.Take(10).ToList();
-        List<User> technicians = context.Users.Skip(10).ToList();
-        List<ChargerEvent> events = new List<ChargerEvent>();
-        Random random = new Random();
+        var chargers = context.Chargers.ToList();
+        var users = context.Users.Take(10).ToList();
+        var technicians = context.Users.Skip(10).ToList();
+        var events = new List<ChargerEvent>();
+        var random = new Random();
 
         // Generate random events for each charger
-        foreach (Charger charger in chargers)
+        foreach (var charger in chargers)
         {
             // Generate status change history (5-10 events per charger)
-            int statusChangeCount = random.Next(5, 11);
-            DateTime currentDate = DateTime.Now.AddDays(-30); // Start from 30 days ago
-            ChargerStatus previousStatus = ChargerStatus.Available;
+            var statusChangeCount = random.Next(5, 11);
+            var currentDate = DateTime.UtcNow.AddDays(-30); // Start from 30 days ago
+            var previousStatus = ChargerStatus.Available;
 
-            for (int i = 0; i < statusChangeCount; i++)
+            for (var i = 0; i < statusChangeCount; i++)
             {
                 // Advance time by 1-48 hours
                 currentDate = currentDate.AddHours(random.Next(1, 49));
 
                 // Get a new status different from the previous one
-                ChargerStatus newStatus = GetDifferentStatus(previousStatus);
+                var newStatus = GetDifferentStatus(previousStatus);
 
                 // Get a random technician
-                User technician = technicians[random.Next(technicians.Count)];
+                var technician = technicians[random.Next(technicians.Count)];
 
                 events.Add(new ChargerEvent
                 {
@@ -173,6 +187,7 @@ public static class InitialDataSeeder
                     OldStatus = previousStatus,
                     NewStatus = newStatus,
                     ChangedBy = technician.Name,
+                    UserId = technician.Id,
                     Notes = GetRandomStatusNote(previousStatus, newStatus)
                 });
 
@@ -180,27 +195,27 @@ public static class InitialDataSeeder
             }
 
             // Generate charging sessions (10-20 per charger)
-            int sessionCount = random.Next(10, 21);
-            currentDate = DateTime.Now.AddDays(-30); // Reset to 30 days ago
+            var sessionCount = random.Next(10, 21);
+            currentDate = DateTime.UtcNow.AddDays(-30); // Reset to 30 days ago
 
-            for (int i = 0; i < sessionCount; i++)
+            for (var i = 0; i < sessionCount; i++)
             {
                 // Advance time by 3-24 hours
                 currentDate = currentDate.AddHours(random.Next(3, 25));
 
                 // Session duration between 15 minutes and 4 hours
-                int durationMinutes = random.Next(15, 241);
-                DateTime endTime = currentDate.AddMinutes(durationMinutes);
+                var durationMinutes = random.Next(15, 241);
+                var endTime = currentDate.AddMinutes(durationMinutes);
 
                 // Calculate random energy consumed and price
-                double energyConsumed = Math.Round(random.NextDouble() * 50 + 5, 2); // 5-55 kWh
-                double totalPrice = Math.Round(energyConsumed * (random.NextDouble() * 2 + 6), 2); // 6-8 per kWh
+                var energyConsumed = Math.Round(random.NextDouble() * 50 + 5, 2); // 5-55 kWh
+                var totalPrice = Math.Round(energyConsumed * (random.NextDouble() * 2 + 6), 2); // 6-8 per kWh
 
-                ChargingSessionStatus sessionStatus = GetRandomSessionStatus();
-                bool isCompleted = sessionStatus != ChargingSessionStatus.InProgress;
+                var sessionStatus = GetRandomSessionStatus();
+                var isCompleted = sessionStatus != ChargingSessionStatus.InProgress;
 
                 // Get a random customer
-                User customer = users[random.Next(users.Count)];
+                var customer = users[random.Next(users.Count)];
 
                 events.Add(new ChargerEvent
                 {
@@ -212,7 +227,8 @@ public static class InitialDataSeeder
                     SessionStatus = sessionStatus,
                     TotalPrice = isCompleted ? totalPrice : null,
                     EnergyConsumed = isCompleted ? energyConsumed : null,
-                    IsCompleted = isCompleted
+                    IsCompleted = isCompleted,
+                    UserId = customer.Id
                 });
             }
         }
@@ -221,9 +237,9 @@ public static class InitialDataSeeder
         context.SaveChanges();
 
         // Update chargers' current status based on the last status change
-        foreach (Charger charger in chargers)
+        foreach (var charger in chargers)
         {
-            ChargerEvent? lastStatusChange = events
+            var lastStatusChange = events
                 .Where(e => e.ChargerId == charger.Id && e.EventType == EventType.StatusChange).MaxBy(e => e.StartTime);
 
             if (lastStatusChange != null && lastStatusChange.NewStatus.HasValue)
@@ -250,7 +266,7 @@ public static class InitialDataSeeder
     /// </summary>
     private static ChargerStatus GetRandomStatus()
     {
-        Array statuses = Enum.GetValues(typeof(ChargerStatus));
+        var statuses = Enum.GetValues(typeof(ChargerStatus));
         return (ChargerStatus)statuses.GetValue(new Random().Next(statuses.Length));
     }
 
@@ -259,7 +275,7 @@ public static class InitialDataSeeder
     /// </summary>
     private static ChargerStatus GetDifferentStatus(ChargerStatus currentStatus)
     {
-        ChargerStatus[] statuses = Enum.GetValues(typeof(ChargerStatus))
+        var statuses = Enum.GetValues(typeof(ChargerStatus))
             .Cast<ChargerStatus>()
             .Where(s => s != currentStatus)
             .ToArray();
@@ -272,7 +288,7 @@ public static class InitialDataSeeder
     /// </summary>
     private static ChargingSessionStatus GetRandomSessionStatus()
     {
-        Array statuses = Enum.GetValues(typeof(ChargingSessionStatus));
+        var statuses = Enum.GetValues(typeof(ChargingSessionStatus));
         return (ChargingSessionStatus)statuses.GetValue(new Random().Next(statuses.Length));
     }
 
@@ -283,13 +299,13 @@ public static class InitialDataSeeder
     {
         if (newStatus == ChargerStatus.OutOfOrder)
         {
-            string[] issues = new[] { "Connector damaged", "Display not working", "Power fluctuations", "Communication error", "Payment system failure", "Overheating", "Scheduled maintenance", "Software update required" };
+            string[] issues = { "Connector damaged", "Display not working", "Power fluctuations", "Communication error", "Payment system failure", "Overheating", "Scheduled maintenance", "Software update required" };
 
             return issues[new Random().Next(issues.Length)];
         }
         if (oldStatus == ChargerStatus.OutOfOrder && newStatus == ChargerStatus.Available)
         {
-            string[] fixes = new[] { "Repaired connector", "Replaced display", "Fixed power supply", "Resolved communication issue", "Updated software", "Completed maintenance", "Restarted system", "Replaced defective parts" };
+            string[] fixes = { "Repaired connector", "Replaced display", "Fixed power supply", "Resolved communication issue", "Updated software", "Completed maintenance", "Restarted system", "Replaced defective parts" };
 
             return fixes[new Random().Next(fixes.Length)];
         }
@@ -310,7 +326,7 @@ public static class InitialDataSeeder
     /// </summary>
     private static string GetRandomFirstName()
     {
-        string[] firstNames = new[] { "Jan", "Petr", "Martin", "Tomáš", "Pavel", "Jiří", "Lukáš", "David", "Michal", "Josef", "Jaroslav", "Miroslav", "Václav", "Jakub", "Filip", "Marie", "Jana", "Eva", "Hana", "Anna", "Lenka", "Kateřina", "Lucie", "Petra", "Veronika", "Martina", "Jitka", "Tereza", "Monika", "Zdeňka" };
+        string[] firstNames = { "Jan", "Petr", "Martin", "Tomáš", "Pavel", "Jiří", "Lukáš", "David", "Michal", "Josef", "Jaroslav", "Miroslav", "Václav", "Jakub", "Filip", "Marie", "Jana", "Eva", "Hana", "Anna", "Lenka", "Kateřina", "Lucie", "Petra", "Veronika", "Martina", "Jitka", "Tereza", "Monika", "Zdeňka" };
 
         return firstNames[new Random().Next(firstNames.Length)];
     }
@@ -320,7 +336,7 @@ public static class InitialDataSeeder
     /// </summary>
     private static string GetRandomLastName()
     {
-        string[] lastNames = new[] { "Novák", "Svoboda", "Novotný", "Dvořák", "Černý", "Procházka", "Kučera", "Veselý", "Horák", "Němec", "Marek", "Pospíšil", "Hájek", "Jelínek", "Král", "Růžička", "Beneš", "Fiala", "Sedláček", "Doležal", "Zeman", "Kolář", "Navrátil", "Čermák", "Nováková", "Svobodová", "Novotná", "Dvořáková", "Černá", "Procházková", "Kučerová" };
+        string[] lastNames = { "Novák", "Svoboda", "Novotný", "Dvořák", "Černý", "Procházka", "Kučera", "Veselý", "Horák", "Němec", "Marek", "Pospíšil", "Hájek", "Jelínek", "Král", "Růžička", "Beneš", "Fiala", "Sedláček", "Doležal", "Zeman", "Kolář", "Navrátil", "Čermák", "Nováková", "Svobodová", "Novotná", "Dvořáková", "Černá", "Procházková", "Kučerová" };
 
         return lastNames[new Random().Next(lastNames.Length)];
     }

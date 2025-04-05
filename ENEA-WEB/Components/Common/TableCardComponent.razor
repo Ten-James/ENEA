@@ -1,29 +1,100 @@
-﻿@using Generated.Client
-@typeparam T
+﻿@typeparam T
+@using Generated.Client
+@typeparam K
+@inject MyApiClient client;
+@inject NavigationManager Navigation;
+@inject ILogger<TableCardComponent<Object, Object>> Logger;
 @attribute [StreamRendering]
 
-<Card>
-    <CardHeader>@Title</CardHeader>
-    <CardBody Padding="Padding.Is0">
-        <Table Bordered Hoverable>
-            <TableHeader>
-                <TableRow>
+<MudCard>
+    <MudCardHeader>
+        <MudText Typo="Typo.h4">
+            @Title
+        </MudText>
+    </MudCardHeader>
+    <MudCardContent>
+        @if (isLoading)
+        {
+            @for (var i = 0; i < 10; i++)
+            {
+                <MudSkeleton Height="50px" Width="100%" Animation="Animation.Wave"/>
+            }
+        }
+        else
+        {
+            <MudTable Items="items.Items" Hover="true">
+                <HeaderContent>
                     @foreach (var column in Columns)
                     {
-                        <TableHeaderCell>@column</TableHeaderCell>
+                        <MudTh>@column</MudTh>
                     }
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                <AsyncListLoader Accessor="Accessor" Render="Render"/>
-            </TableBody>
-        </Table>
-    </CardBody>
-</Card>
+                </HeaderContent>
+                <RowTemplate>
+                    @RowTemplate(context)
+                </RowTemplate>
+                <PagerContent>
+                    <MudStack class="p-4" AlignItems="AlignItems.Center" Row="true">
+                        <MudText Typo="Typo.body2">
+                            Total items:
+                            @items.TotalCount
+                        </MudText>
+                        <MudPagination Color="Color.Primary" Count="@(items.TotalCount / pageSize + 1)" Selected="@(pageIndex + 1)" SelectedChanged="Callback" ShowPreviousButton="false" ShowNextButton="false"/>
+                    </MudStack>
+                </PagerContent>
+            </MudTable>
+        }
+    </MudCardContent>
+</MudCard>
 
 @code {
     [Parameter] public String Title { get; set; }
     [Parameter] public List<String> Columns { get; set; }
-    [Parameter] public Func<IMyApiClient, Task<ICollection<T>>> Accessor { get; set; }
-    [Parameter] public RenderFragment<T> Render { get; set; }
+    [Parameter] public Func<IMyApiClient, Int32, Int32, Task<K>> Accessor { get; set; }
+    [Parameter] public Func<K, IPaginationResponse<T>> Converter { get; set; }
+    [Parameter] public RenderFragment<T> RowTemplate { get; set; }
+    private Int32 pageSize = 10;
+    private Int32 pageIndex = 0;
+    private IPaginationResponse<T> items;
+    private Boolean isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var data = await Accessor(client, pageIndex, pageSize);
+            items = Converter(data);
+            isLoading = false;
+        }
+        catch (ApiException e)
+        {
+            Logger.LogError(e, "Error while loading data");
+            if (e.StatusCode == 401)
+            {
+                Navigation.NavigateTo("/Login");
+            }
+            isLoading = true;
+        }
+    }
+    private async Task Callback(Int32 obj)
+    {
+        try
+        {
+            isLoading = true;
+            pageIndex = obj - 1;
+            var data = await Accessor(client, pageIndex, pageSize);
+            items = Converter(data);
+            isLoading = false;
+        }
+        catch (ApiException e)
+        {
+            Logger.LogError(e, "Error while loading data");
+            if (e.StatusCode == 401)
+            {
+                Navigation.NavigateTo("/Login");
+            }
+            isLoading = true;
+        }
+
+
+    }
 }

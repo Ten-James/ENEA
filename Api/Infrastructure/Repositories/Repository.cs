@@ -5,8 +5,8 @@ namespace Api.Infrastructure.Repositories;
 
 public class Repository<T> : IRepository<T> where T : EntityBase
 {
-    private readonly ENEADbContext _context;
-    private readonly DbSet<T> _dbSet;
+    protected readonly ENEADbContext _context;
+    protected readonly DbSet<T> _dbSet;
 
     public Repository(ENEADbContext context)
     {
@@ -14,32 +14,41 @@ public class Repository<T> : IRepository<T> where T : EntityBase
         _dbSet = context.Set<T>();
     }
 
-    public async Task<IEnumerable<T>> GetAllAsync()
+    public Task<int> CountAsync()
     {
-        return await _dbSet.ToListAsync();
+        return _dbSet.CountAsync();
+    }
+    public virtual async Task<IEnumerable<T>> GetAllAsync(int offset, int size)
+    {
+        var skipped = _dbSet.Skip(offset);
+        if (size > 0)
+        {
+            return await skipped.Take(size).ToListAsync();
+        }
+        return await skipped.ToListAsync();
     }
 
-    public async Task<T?> GetByIdAsync(Guid id)
+    public virtual async Task<T?> GetByIdAsync(Guid id)
     {
         return await _dbSet.FindAsync(id);
     }
 
-    public async Task<T> AddAsync(T entity)
+    public virtual async Task<T> AddAsync(T entity)
     {
         _dbSet.Add(entity);
         await _context.SaveChangesAsync();
         return entity;
     }
 
-    public async Task UpdateAsync(T entity)
+    public virtual async Task UpdateAsync(T entity)
     {
         _dbSet.Update(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(Guid id)
+    public virtual async Task DeleteAsync(Guid id)
     {
-        T? entity = await _dbSet.FindAsync(id);
+        var entity = await _dbSet.FindAsync(id);
         if (entity != null)
         {
             _dbSet.Remove(entity);

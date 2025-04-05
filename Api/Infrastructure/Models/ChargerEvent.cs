@@ -29,8 +29,8 @@ public class ChargerEvent : EntityBase
     // Status change specific fields
     public ChargerStatus? OldStatus { get; set; }
     public ChargerStatus? NewStatus { get; set; }
-    public string ChangedBy { get; set; }
-    public string Notes { get; set; }
+    public string? ChangedBy { get; set; }
+    public string? Notes { get; set; }
 
 
     [Required]

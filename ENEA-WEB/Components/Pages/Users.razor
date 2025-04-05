@@ -1,25 +1,27 @@
 ﻿@page "/Users"
-@using ENEA.WEB.Components.Common
 @using Generated.Client
+@inject NavigationManager Navigation
 @attribute [StreamRendering]
+@rendermode InteractiveServer
 
 <PageTitle>Users</PageTitle>
 
 <TableCardComponent Title="Users table"
                     Columns="@List"
-                    Accessor="@(client => client.UserAllAsync())"
-                    Render="Render"/>
+                    Converter="@(data => new UserReadDtoPaginationResponseWrapper(data))"
+                    Accessor="@((client, pageIndex, pageSize) => client.UserGETAsync(pageIndex, pageSize))">
+    <RowTemplate >
+        <MudTd DataLabel="Id">@context.Id </MudTd>
+        <MudTd DataLabel="Name">@context.Name </MudTd>
+        <MudTd DataLabel="Email">@context.Email </MudTd>
+        <MudTd DataLabel="Actions">
+            <MudIconButton Icon="@Icons.Material.Filled.PanoramaFishEye" OnClick="@(() => NavigateToDetail(context.Id))"/>
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"/>
+        </MudTd >
+    </RowTemplate >
+</TableCardComponent >
 
 @code {
-
-    private readonly List<String> List = new List<String> { "Id", "Name", "Email", "Edit", "Delete" };
-
-    public RenderFragment<UserReadDto> Render => user =>
-        @<TableRow>
-            <TableRowHeader>@user.Id</TableRowHeader>
-            <TableRowCell>@user.Name</TableRowCell>
-            <TableRowCell>@user.Email</TableRowCell>
-            <TableRowCell></TableRowCell>
-            <TableRowCell></TableRowCell>
-        </TableRow>;
+    private void NavigateToDetail(Guid id) { Navigation.NavigateTo($" / Users /{id} "); }
+    private readonly List<String> List = new List<String> { "Id", "Name", "Email", "Actions" };
 }

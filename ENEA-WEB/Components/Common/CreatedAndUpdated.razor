@@ -1,0 +1,9 @@
+﻿<MudStack Row="true" Spacing="1">
+    <MudText Style="font-style: italic" Typo="Typo.body2" Class="mr-2">Created: @Created.ToString("yyyy-MM-dd HH:mm:ss")</MudText>
+    <MudText Style="font-style: italic" Typo="Typo.body2" Class="ml-2">Updated: @Updated.ToString("yyyy-MM-dd HH:mm:ss")</MudText>
+</MudStack>
+
+@code {
+    [Parameter] public DateTimeOffset Created { get; set; }
+    [Parameter] public DateTimeOffset Updated { get; set; }
+}

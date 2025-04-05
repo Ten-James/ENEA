@@ -9,6 +9,10 @@
     }
   },
   "profiles": {
+    "Generate API": {
+      "commandName": "nswag",
+      "commandLineArgs": "run nswag.json"
+    },
     "http": {
       "commandName": "Project",
       "dotnetRunMessages": true,

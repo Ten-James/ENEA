@@ -1,4 +1,5 @@
 ﻿using Api.Infrastructure.Models.Configuration;
+using GeneratedDtos;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using TenJames.DtoGenerator;
@@ -23,5 +24,7 @@ public class ChargerGroup : EntityBase
     public string Address { get; set; }
 
     // One station can have many chargers
+    [DtoVisibility(DtoType.AllRead)]
+    [MapTo(typeof(ICollection<ChargerReadDto>), "src.Chargers")]
     public virtual ICollection<Charger> Chargers { get; set; }
 }

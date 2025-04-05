@@ -1,27 +1,27 @@
-using Blazorise;
-using Blazorise.Bootstrap5;
-using Blazorise.Icons.FontAwesome;
+using Blazored.LocalStorage;
 using ENEA.WEB.Components;
+using ENEA.WEB.Services;
 using Generated.Client;
+using Microsoft.AspNetCore.Components.Authorization;
+using MudBlazor.Services;
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-builder.Services
-    .AddBlazorise(options =>
-    {
-        options.Immediate = true;
-    })
-    .AddBootstrap5Providers()
-    .AddFontAwesomeIcons();
+
+builder.Services.AddScoped<AuthStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<AuthStateProvider>());
+
+builder.Services.AddBlazoredLocalStorage();
+builder.Services.AddMudServices();
 
 builder.Services.AddHttpClient();
 builder.Services.AddScoped(sp =>
     new MyApiClient(builder.Configuration.GetConnectionString("API"), sp.GetRequiredService<HttpClient>()));
 
-WebApplication app = builder.Build();
+var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

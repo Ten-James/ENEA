@@ -1,0 +1,55 @@
+﻿@page "/Login"
+@using Blazored.LocalStorage
+@using ENEA.WEB.Services
+@using Generated.Client
+@rendermode InteractiveServer
+@inject AuthStateProvider AuthStateProvider
+@inject ILogger<Login> Logger
+@inject MyApiClient client
+@inject NavigationManager Navigation
+@inject ILocalStorageService localStorage
+@inject ISnackbar Snackbar
+<MudStack Justify="Justify.Center" AlignItems="AlignItems.Center" Style="height: 100vh">
+<MudPaper Class="pa-4" Elevation="4">
+    <MudStack>
+        <MudText Typo="Typo.h2">
+            Login
+        </MudText>
+        <MudForm Spacing="2">
+            <MudTextField T="String" @bind-Text="loginModel.Email" Label="Email" Required="true"/>
+            <MudTextField T="String" @bind-Text="loginModel.Password" Label="Password" InputType="InputType.Password" Required="true"/>
+        </MudForm>
+        <MudButton @ref="button" OnClick="@HandleLogin" Type="Submit" Variant="Variant.Filled" Color="Color.Primary">Login</MudButton>
+        <MudLink Href="/Register">Or you still dont have an account here?</MudLink>
+    </MudStack>
+</MudPaper>
+</MudStack>
+
+@code {
+    MudButton button;
+
+    public LoginRequest loginModel = new LoginRequest
+    {
+        Email = "admin@example.com"
+    };
+
+    private async Task HandleLogin()
+    {
+        Logger.LogInformation("Attempting to login with email: {Email}", loginModel.Email);
+        try
+        {
+            button.Disabled = true;
+            var response = await client.LoginAsync(loginModel);
+            await localStorage.SetItemAsync("authToken", response.Token);
+            Snackbar.Add("Login successful", Severity.Success);
+            AuthStateProvider.NotifyUserAuthentication(response.Token);
+            Navigation.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            button.Disabled = false;
+            Snackbar.Add("Login failed: " + ex.Message, Severity.Error);
+        }
+    }
+
+}

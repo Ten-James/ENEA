@@ -1,6 +1,8 @@
-﻿using Api.Infrastructure.Models;
+﻿using Api.BussinesLogic.Exceptions;
+using Api.Infrastructure.Models;
 using Api.Infrastructure.Repositories;
 using AutoMapper;
+using Domain;
 using Microsoft.Extensions.Logging;
 
 namespace BussinesLogic.Services;
@@ -12,25 +14,45 @@ public class Service<T, TReadDto, TReadDetailDto, TCreateDto, TUpdateDto>(
     : IService<T, TReadDto, TReadDetailDto, TCreateDto, TUpdateDto>
     where T : EntityBase
 {
-    public async Task<IEnumerable<TReadDto>> GetAllAsync()
+    public async Task<PaginationResponse<TReadDto>> GetAllAsync(PaginationRequest request)
     {
         logger.LogInformation("GetAllAsync");
-        IEnumerable<T> entities = await repository.GetAllAsync();
-        return mapper.Map<IEnumerable<TReadDto>>(entities);
+        var pageNumber = request.PageNumber;
+        if (pageNumber < 0)
+        {
+            pageNumber = 0;
+        }
+        var totalCount = await repository.CountAsync();
+        var offset = pageNumber * request.PageSize;
+        while (offset > totalCount)
+        {
+            offset -= request.PageSize;
+            pageNumber--;
+        }
 
+        var entities = await repository.GetAllAsync(offset, request.PageSize);
+        var dtos = mapper.Map<List<TReadDto>>(entities);
+        var response = new PaginationResponse<TReadDto>(totalCount, pageNumber, request.PageSize, dtos);
+        return response;
     }
 
     public async Task<TReadDetailDto> GetByIdAsync(Guid id)
     {
         logger.LogInformation("GetByIdAsync");
-        T? entity = await repository.GetByIdAsync(id);
+        var entity = await repository.GetByIdAsync(id);
+
+        if (entity == null)
+        {
+            throw new EntityNotFoundException(id, "Entity not found");
+        }
+
         return mapper.Map<TReadDetailDto>(entity);
     }
 
     public async Task<TReadDto> AddAsync(TCreateDto dto)
     {
         logger.LogInformation("AddAsync");
-        T? entity = mapper.Map<T>(dto);
+        var entity = mapper.Map<T>(dto);
         entity = await repository.AddAsync(entity);
         return mapper.Map<TReadDto>(entity);
     }
@@ -38,12 +60,12 @@ public class Service<T, TReadDto, TReadDetailDto, TCreateDto, TUpdateDto>(
     public async Task UpdateAsync(Guid id, TUpdateDto dto)
     {
         logger.LogInformation("UpdateAsync");
-        T? entity = await repository.GetByIdAsync(id);
+        var entity = await repository.GetByIdAsync(id);
         if (entity == null)
         {
             throw new Exception("Entity not found");
         }
-        T? updatedEntity = mapper.Map(dto, entity);
+        var updatedEntity = mapper.Map(dto, entity);
         await repository.UpdateAsync(updatedEntity);
 
     }

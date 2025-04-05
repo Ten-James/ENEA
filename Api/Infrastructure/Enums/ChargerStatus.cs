@@ -2,7 +2,18 @@
 
 public enum ChargerStatus
 {
-    Available = 1,
-    Charging = 2,
-    OutOfOrder = 3
+    /// <summary>
+    ///     Available for use
+    /// </summary>
+    Available,
+
+    /// <summary>
+    ///     Charging in progress
+    /// </summary>
+    Charging,
+
+    /// <summary>
+    ///     Out of order
+    /// </summary>
+    OutOfOrder
 }

@@ -59,7 +59,6 @@ namespace Api.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("ChangedBy")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<Guid>("ChargerId")
@@ -84,7 +83,6 @@ namespace Api.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Notes")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int?>("OldStatus")
@@ -166,6 +164,9 @@ namespace Api.Infrastructure.Migrations
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");

@@ -1,4 +1,5 @@
-﻿using Api.Infrastructure.Models.Configuration;
+﻿using Api.Infrastructure.Enums;
+using Api.Infrastructure.Models.Configuration;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using TenJames.DtoGenerator;
@@ -20,4 +21,6 @@ public class User : EntityBase
     public string? Email { get; set; }
 
     [DtoIgnore][Required] public string Password { get; set; } = string.Empty;
+
+    public UserRole Role { get; set; } = UserRole.User;
 }

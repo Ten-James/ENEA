@@ -1,0 +1,30 @@
+﻿@using Generated.Client
+@typeparam T
+@inject MyApiClient client;
+@attribute [StreamRendering]
+
+@code {
+
+    [Parameter] public Func<IMyApiClient, Task<T>> Accessor { get; set; }
+
+    [Parameter] public RenderFragment Loader { get; set; }
+    [Parameter] public RenderFragment<T> Render { get; set; }
+
+    private T item;
+    private Boolean isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        item = await Accessor(client);
+        isLoading = false;
+    }
+}
+
+@if (isLoading)
+{
+    @Loader
+}
+else
+{
+    @Render(item)
+}

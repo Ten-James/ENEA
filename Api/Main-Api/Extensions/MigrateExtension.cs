@@ -1,20 +1,21 @@
 ﻿using Api.Infrastructure;
+using Api.Infrastructure.Fixtures;
+using Microsoft.EntityFrameworkCore;
 
 public static class MigrationExtension
 {
     public static void MigrateAndSeedDatabase(this IApplicationBuilder app)
     {
-        using IServiceScope scope = app.ApplicationServices.CreateScope();
-        IServiceProvider services = scope.ServiceProvider;
-        ENEADbContext context = services.GetRequiredService<ENEADbContext>();
-        ILogger<ENEADbContext> logger = services.GetRequiredService<ILogger<ENEADbContext>>();
+        using var scope = app.ApplicationServices.CreateScope();
+        var services = scope.ServiceProvider;
+        var context = services.GetRequiredService<ENEADbContext>();
+        var logger = services.GetRequiredService<ILogger<ENEADbContext>>();
 
         try
         {
-            context.Database.EnsureDeleted();
-            context.Database.EnsureCreated();
-
-            //InitialDataSeeder.Initialize(services);
+            logger.LogInformation("Migrating database...");
+            context.Database.Migrate();
+            InitialDataSeeder.Initialize(services);
             logger.LogInformation("Migration and seeding completed successfully.");
         }
         catch (Exception ex)
