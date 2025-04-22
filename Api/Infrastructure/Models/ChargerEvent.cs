@@ -3,13 +3,16 @@ using Api.Infrastructure.Models.Configuration;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using TenJames.DtoGenerator;
 
 namespace Api.Infrastructure.Models;
 
+[GenerateDto(DtoType.Read)]
 [EntityTypeConfiguration(typeof(ChargerEventConfiguration))]
 public class ChargerEvent : EntityBase
 {
     [Required]
+    [DtoIgnore]
     public Guid ChargerId { get; set; }
 
     [ForeignKey("ChargerId")]
@@ -29,14 +32,15 @@ public class ChargerEvent : EntityBase
     // Status change specific fields
     public ChargerStatus? OldStatus { get; set; }
     public ChargerStatus? NewStatus { get; set; }
-    public string? ChangedBy { get; set; }
     public string? Notes { get; set; }
 
 
     [Required]
+    [DtoIgnore]
     public Guid UserId { get; set; }
 
     [ForeignKey("UserId")]
+    [DtoIgnore]
     public virtual User User { get; set; }
 
     public ChargingSessionStatus? SessionStatus { get; set; }

@@ -1,0 +1,26 @@
+﻿@model GeneratedDtos.UserReadDetailDto
+
+@{
+    ViewData["Title"] = "User Detail";
+}
+
+<h1>User Detail</h1>
+
+<table class="table">
+    <tr>
+        <th>Id</th>
+        <td>@Model.Id</td>
+    </tr>
+    <tr>
+        <th>Name</th>
+        <td>@Model.Name</td>
+    </tr>
+    <tr>
+        <th>Email</th>
+        <td>@Model.Email</td>
+    </tr>
+    <!-- Add more fields as needed -->
+</table>
+
+<a href="@Url.Action("Index", "User")" class="btn btn-secondary">Back to List</a>
+<a href="@Url.Action("Edit", "User", new { id = Model.Id })" class="btn btn-primary">Edit</a>

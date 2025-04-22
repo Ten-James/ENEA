@@ -186,7 +186,6 @@ public static class InitialDataSeeder
                     EndTime = currentDate, // For status changes, start and end times are the same
                     OldStatus = previousStatus,
                     NewStatus = newStatus,
-                    ChangedBy = technician.Name,
                     UserId = technician.Id,
                     Notes = GetRandomStatusNote(previousStatus, newStatus)
                 });

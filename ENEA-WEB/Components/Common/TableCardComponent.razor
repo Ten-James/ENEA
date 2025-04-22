@@ -4,7 +4,6 @@
 @inject MyApiClient client;
 @inject NavigationManager Navigation;
 @inject ILogger<TableCardComponent<Object, Object>> Logger;
-@attribute [StreamRendering]
 
 <MudCard>
     <MudCardHeader>
@@ -13,36 +12,26 @@
         </MudText>
     </MudCardHeader>
     <MudCardContent>
-        @if (isLoading)
-        {
-            @for (var i = 0; i < 10; i++)
-            {
-                <MudSkeleton Height="50px" Width="100%" Animation="Animation.Wave"/>
-            }
-        }
-        else
-        {
-            <MudTable Items="items.Items" Hover="true">
-                <HeaderContent>
-                    @foreach (var column in Columns)
-                    {
-                        <MudTh>@column</MudTh>
-                    }
-                </HeaderContent>
-                <RowTemplate>
-                    @RowTemplate(context)
-                </RowTemplate>
-                <PagerContent>
-                    <MudStack class="p-4" AlignItems="AlignItems.Center" Row="true">
-                        <MudText Typo="Typo.body2">
-                            Total items:
-                            @items.TotalCount
-                        </MudText>
-                        <MudPagination Color="Color.Primary" Count="@(items.TotalCount / pageSize + 1)" Selected="@(pageIndex + 1)" SelectedChanged="Callback" ShowPreviousButton="false" ShowNextButton="false"/>
-                    </MudStack>
-                </PagerContent>
-            </MudTable>
-        }
+        <MudTable Items="@(items?.Items ?? [])" Hover="true">
+            <HeaderContent>
+                @foreach (var column in Columns)
+                {
+                    <MudTh>@column</MudTh>
+                }
+            </HeaderContent>
+            <RowTemplate>
+                @RowTemplate(context)
+            </RowTemplate>
+            <PagerContent>
+                <MudStack class="p-4" AlignItems="AlignItems.Center" Row="true">
+                    <MudText Typo="Typo.body2">
+                        Total items:
+                        @items.TotalCount
+                    </MudText>
+                    <MudPagination Color="Color.Primary" Count="@(items.TotalCount / pageSize + 1)" Selected="@(pageIndex + 1)" SelectedChanged="Callback" ShowPreviousButton="false" ShowNextButton="false"/>
+                </MudStack>
+            </PagerContent>
+        </MudTable>
     </MudCardContent>
 </MudCard>
 
@@ -61,9 +50,13 @@
     {
         try
         {
+            Logger.LogInformation("Starting call");
             var data = await Accessor(client, pageIndex, pageSize);
+            Logger.LogInformation("Data loaded");
             items = Converter(data);
+            Logger.LogInformation("Data converted");
             isLoading = false;
+            Logger.LogInformation("Data set");
         }
         catch (ApiException e)
         {

@@ -1,0 +1,121 @@
+﻿@model GeneratedDtos.ChargerReadDetailDto
+
+@{
+    ViewData["Title"] = "Charger Details";
+}
+
+<h1>Charger Details</h1>
+
+<div class="row">
+    <div class="col-4">
+        <h3>@Model.ChargerCode</h3>
+        <p>
+            <strong>Status:</strong> @Model.CurrentStatus
+        </p>
+        <p>
+            <strong>Created At:</strong> @Model.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
+        </p>
+        <p>
+            <strong>Updated At:</strong> @Model.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss")
+        </p>
+    </div>
+    <div class="col-8">
+        <canvas id="energyConsumedChart"></canvas>
+    </div>
+</div>
+
+<h2>Event History</h2>
+<table class="table">
+    <thead>
+    <tr>
+        <th>Start Time</th>
+        <th>End Time</th>
+        <th>Duration</th>
+        <th>Event Type</th>
+        <th>Old Status</th>
+        <th>New Status</th>
+        <th>Total Price</th>
+        <th>Energy Consumed (kWh)</th>
+        <th>Notes</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var eventItem in Model.Events)
+    {
+        <tr>
+            <td>@(eventItem.StartTime.ToString("yyyy-MM-dd HH:mm:ss"))</td>
+            <td>@(eventItem.EndTime?.ToString("yyyy-MM-dd HH:mm:ss"))</td>
+            <td>@(eventItem.Duration?.ToString(@"hh\:mm\:ss"))</td>
+            <td>@(eventItem.EventType)</td>
+            <td>@(eventItem.OldStatus?.ToString())</td>
+            <td>@(eventItem.NewStatus?.ToString())</td>
+            <td>@(eventItem.TotalPrice?.ToString("C"))</td>
+            <td>@(eventItem.EnergyConsumed?.ToString("F2"))</td>
+            <td>@(eventItem.Notes)</td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<a href="@Url.Action("Detail", "ChargerGroup", new { id = Model.ChargerGroupId })" class="btn btn-secondary">Back to List</a>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Group and aggregate data by day
+            const groupedData = @Html.Raw(Json.Serialize(
+                                Model.Events
+                                    .OrderBy(e => e.StartTime)
+                                    .GroupBy(e => e.StartTime.Date)
+                                    .Select(g => new
+                                    {
+                                        Date = g.Key.ToString("yyyy-MM-dd"),
+                                        TotalEnergy = g.Sum(e => e.EnergyConsumed ?? 0),
+                                        TotalPrice = g.Sum(e => e.TotalPrice ?? 0)
+                                    })
+                                ));
+
+            const ctx = document.getElementById('energyConsumedChart').getContext('2d');
+            const data = {
+                labels: groupedData.map(d => d.date),
+                datasets: [{
+                    label: 'Energy Consumed (kWh)',
+                    data: groupedData.map(d => d.totalEnergy),
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            };
+
+            new Chart(ctx, {
+                type: 'line',
+                data: data,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Energy Consumed (kWh)'
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}

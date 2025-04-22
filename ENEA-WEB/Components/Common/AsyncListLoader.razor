@@ -1,7 +1,9 @@
-﻿@using Generated.Client
+﻿@using Blazored.LocalStorage
+@using Generated.Client
 @typeparam T
 @inject MyApiClient client;
 @attribute [StreamRendering]
+@attribute [RenderModeInteractiveServer]
 
 @code {
 
@@ -12,10 +14,13 @@
     private IEnumerable<T> items;
     private Boolean isLoading = true;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(Boolean first)
     {
-        items = await Accessor(client);
-        isLoading = false;
+        if (first)
+        {
+            items = await Accessor(client);
+            isLoading = false;
+        }
     }
 
 }

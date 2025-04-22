@@ -27,6 +27,19 @@ public class Program
 
         builder.Services.AddControllers()
             .AddJsonOptions(opt => opt.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+        builder.Services.AddDistributedMemoryCache();
+
+        builder.Services.AddSession(options =>
+        {
+            options.IdleTimeout = TimeSpan.FromHours(10);
+            options.Cookie.HttpOnly = true;
+            options.Cookie.IsEssential = true;
+        });
+
+
+        builder.Services.AddControllersWithViews();
+
         builder.Services.AddDbContext<ENEADbContext>(opt => opt.UseNpgsql(
             builder.Configuration.GetConnectionString("DefaultConnection")
             ?? "Host=localhost;Port=5432;Database=enea;Username=enea;Password=enea")
@@ -57,6 +70,7 @@ public class Program
             };
         });
 
+
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(options =>
@@ -81,6 +95,9 @@ public class Program
 
         });
         builder.Services.AddScoped<IUserRepository, UserRepository>();
+        builder.Services.AddScoped<IRepository<Charger>, ChargerRepository>();
+        builder.Services.AddScoped<AuthService>();
+        builder.Services.AddScoped<ChargerService>();
         builder.Services.AddScoped(typeof(IRepository<ChargerGroup>), typeof(ChargerGroupRepository));
         builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         builder.Services.AddScoped(typeof(IService<,,,,>), typeof(Service<,,,,>));
@@ -105,11 +122,16 @@ public class Program
         app.UseMiddleware<ErrorMiddleware>();
 
         app.UseAuthorization();
-
-        //app.UseAuthentication();
-
+        app.UseSession();
 
         app.MapControllers();
+
+
+        app.UseRouting();
+        app.UseStaticFiles();
+        app.MapControllerRoute(
+            "default",
+            "{controller=Home}/{action=Index}/{id?}");
 
         app.Run();
     }

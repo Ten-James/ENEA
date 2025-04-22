@@ -1,4 +1,6 @@
-﻿using Api.Infrastructure.Models;
+﻿using Api.Infrastructure.Enums;
+using Api.Infrastructure.Models;
+using Domain;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using System.Reflection;
@@ -30,6 +32,11 @@ internal static class ApiSpecificationHelper
             return StripOnlyDtoFromResponse(type.GenericTypeArguments[0]);
         }
 
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(PaginationResponse<>))
+        {
+            return "PaginationResponse<" + StripOnlyDtoFromResponse(type.GenericTypeArguments[0]) + ">";
+        }
+
         return type.Name;
     }
 
@@ -37,29 +44,37 @@ internal static class ApiSpecificationHelper
 
     private static IEnumerable<ApiModel> GetModels()
     {
-        List<ApiModel> models = new List<ApiModel>();
-        foreach (Type model in typeof(EntityBase).Assembly.GetTypes().Where(x => x.Name.Contains("Dto")))
-        {
-            models.Add(new ApiModel { Name = model.Name, Description = DtoJsonSpecificationGenerator.GenerateJsonSpecification(model) });
-        }
+        var models = typeof(EntityBase).Assembly.GetTypes().Where(x => x.Name.Contains("Dto")).Select(model => new ApiModel { Name = model.Name, Description = DtoJsonSpecificationGenerator.GenerateJsonSpecification(model) }).ToList();
+        models.AddRange(typeof(LoginRequest).Assembly.GetTypes().Select(model => new ApiModel { Name = model.Name, Description = DtoJsonSpecificationGenerator.GenerateJsonSpecification(model) }));
+        models.AddRange(typeof(ChargerStatus).Assembly.GetTypes().Where(x => x.IsEnum).Select(type => new ApiModel { Name = type.Name, Description = DtoJsonSpecificationGenerator.GenerateJsonSpecification(type) }));
         return models;
     }
 
 
     private static IEnumerable<ApiRoute> GetRoutes()
     {
-        List<ApiRoute> routes = new List<ApiRoute>();
+        var routes = new List<ApiRoute>();
 
-        foreach (Type controller in typeof(ApiSpecificationHelper).Assembly.GetTypes()
+        foreach (var controller in typeof(ApiSpecificationHelper).Assembly.GetTypes()
                      .Where(t => t.Namespace == "Main_Api.Controllers" && t.Name.EndsWith("Controller")))
         {
             // for each method try to get the route
-            RouteAttribute? route = controller.GetCustomAttributes(typeof(RouteAttribute), true).FirstOrDefault() as RouteAttribute;
-            foreach (MethodInfo method in controller.GetMethods())
+            var route = controller.GetCustomAttributes(typeof(RouteAttribute), true).FirstOrDefault() as RouteAttribute;
+            foreach (var method in controller.GetMethods())
             {
                 if (method.GetCustomAttributes(typeof(HttpMethodAttribute), true).FirstOrDefault() is HttpMethodAttribute methodAttribute)
                 {
-                    routes.Add(new ApiRoute { Name = method.Name, Method = methodAttribute.HttpMethods.First(), Path = (route!.Template.TrimEnd('/') + "/" + methodAttribute.Template?.TrimStart('/') ?? "").TrimEnd('/'), ResponseBody = StripOnlyDtoFromResponse(method.ReturnType) });
+                    var requestBodyType = method.GetParameters()
+                        .FirstOrDefault(p => p.GetCustomAttribute<FromBodyAttribute>() != null)?.ParameterType;
+
+                    routes.Add(new ApiRoute
+                    {
+                        Name = method.Name,
+                        Method = methodAttribute.HttpMethods.First(),
+                        Path = (route!.Template.TrimEnd('/') + "/" + methodAttribute.Template?.TrimStart('/') ?? "").TrimEnd('/'),
+                        RequestBody = requestBodyType?.Name ?? "",
+                        ResponseBody = StripOnlyDtoFromResponse(method.ReturnType)
+                    });
                 }
             }
         }
@@ -70,7 +85,7 @@ internal static class ApiSpecificationHelper
 
     internal static ApiSpecification GetApiSpecification()
     {
-        ApiSpecification specification = new ApiSpecification { Name = "Enea-Api", Version = "v1" };
+        var specification = new ApiSpecification { Name = "Enea-Api", Version = "v1" };
 
         specification.Routes = GetRoutes();
 
@@ -92,7 +107,7 @@ internal static class ApiSpecificationHelper
     internal struct ApiModel
     {
         public string Name { get; set; }
-        public string Description { get; set; }
+        public object Description { get; set; }
     }
 
 

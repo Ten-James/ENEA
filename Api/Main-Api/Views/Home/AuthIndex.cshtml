@@ -1,0 +1,36 @@
+﻿@model IEnumerable<GeneratedDtos.ChargerGroupReadDto>
+
+@{
+    ViewData["Title"] = "Map of Chargers";
+}
+
+<h1>Charger Map</h1>
+<div id="map" style="height: 500px;"></div>
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const map = L.map('map').setView([0, 0], 2); // Default view
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            const chargers = @Html.Raw(Json.Serialize(Model));
+
+            chargers.forEach(charger => {
+                const marker = L.marker([charger.latitude, charger.longitude]).addTo(map);
+                marker.bindPopup(`<b>${charger.name}</b><br><a href="/ChargerGroup/Detail/${charger.id}">View Details</a>`);
+            });
+
+            if (chargers.length > 0) {
+                const bounds = L.latLngBounds(chargers.map(c => [c.latitude, c.longitude]));
+                map.fitBounds(bounds);
+            }
+        });
+    </script>
+}

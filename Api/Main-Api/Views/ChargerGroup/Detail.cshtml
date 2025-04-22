@@ -1,0 +1,102 @@
+﻿@using Api.Infrastructure.Enums
+@model GeneratedDtos.ChargerGroupReadDetailDto
+
+@{
+    ViewData["Title"] = "Charger Group Detail";
+    var isAdmin = (Boolean)(ViewData["isAdmin"] ?? false);
+    ;
+}
+
+<h1>Charger Group Detail</h1>
+
+<table class="table">
+    <tbody>
+
+    <tr>
+        <th>Id</th>
+        <td colspan="2">@Model.Id</td>
+    </tr>
+    <tr>
+        <th>Name</th>
+        <td colspan="2">@Model.Name</td>
+    </tr>
+    <tr>
+        <th>Address</th>
+        <td colspan="2">@Model.Address</td>
+    </tr>
+    <tr>
+        <th>Location</th>
+        <td>Long: @Model.Longitude</td>
+        <td>Lat: @Model.Latitude</td>
+    </tr>
+    @foreach (var charger in Model.Chargers)
+    {
+        <tr>
+            <th colspan="2">Charger</th>
+            @if (isAdmin)
+            {
+                <td>
+                    <a href="" class="btn btn-primary">Edit</a>
+                    <form asp-action="RemoveCharger" asp-controller="ChargerGroup" method="post" style="display:inline;">
+                        <input type="hidden" name="chargerId" value="@charger.Id"/>
+                        <input type="hidden" name="groupId" value="@Model.Id"/>
+                        <button type="submit" class="btn btn-danger">Remove</button>
+                    </form>
+                </td>
+            }
+        </tr>
+        @if (isAdmin)
+        {
+            <tr>
+                <td></td>
+                <th>Charger Id</th>
+                <td>@charger.Id</td>
+            </tr>
+        }
+        <tr>
+            <td></td>
+            <th>Charger Code</th>
+            <td>@charger.ChargerCode</td>
+        </tr>
+        <tr>
+            <td></td>
+            <th>Charger Status</th>
+            <td>
+                @charger.CurrentStatus
+
+                @if (charger.CurrentStatus == ChargerStatus.Charging)
+                {
+                    <a href="@Url.Action("StopCharging", "ChargerGroup", new { chargerId = charger.Id, groupId = Model.Id })" class="btn btn-danger">Stop Charging</a>
+                }
+                else if (charger.CurrentStatus == ChargerStatus.Available)
+                {
+                    <a href="@Url.Action("StartCharging", "ChargerGroup", new { chargerId = charger.Id, groupId = Model.Id })" class="btn btn-primary">Start Charging</a>
+                }
+                @if (isAdmin)
+                {
+                    if (charger.CurrentStatus == ChargerStatus.OutOfOrder)
+                    {
+                        <a href="@Url.Action("SetToAvailable", "ChargerGroup", new { chargerId = charger.Id, groupId = Model.Id })" class="btn btn-success">Set to Available</a>
+                    }
+                    else
+                    {
+                        <a href="@Url.Action("SetToOutOfOrder", "ChargerGroup", new { chargerId = charger.Id, groupId = Model.Id })" class="btn btn-warning">Set to Out of Order</a>
+                    }
+                    <a href="@Url.Action("Detail", "Charger", new { id = charger.Id })" class="btn btn-secondary">History</a>
+                }
+            </td>
+        </tr>
+    }
+    @if (isAdmin)
+    {
+        <tr>
+            <td colspan="3">
+                <a href="@Url.Action("AddCharger", "ChargerGroup", new { groupId = Model.Id })" class="btn btn-primary">Add</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<a href="@Url.Action("Index", "ChargerGroup")" class="btn btn-secondary">Back to List</a>
+<a href="@Url.Action("Edit", "ChargerGroup", new { id = Model.Id })" class="btn btn-primary">Edit</a>

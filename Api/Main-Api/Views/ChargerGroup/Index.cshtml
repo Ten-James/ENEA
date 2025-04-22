@@ -1,0 +1,60 @@
+﻿@model IEnumerable<GeneratedDtos.ChargerGroupReadDto>
+
+@{
+    ViewData["Title"] = "Charger Group List";
+    var isAdmin = (Boolean)(ViewData["isAdmin"] ?? false);
+    var currentPage = (Int32)ViewData["CurrentPage"];
+    var pageSize = (Int32)ViewData["PageSize"];
+    var totalPages = (Int32)ViewData["TotalPages"];
+}
+
+<h1>Charger Group List</h1>
+
+@if (isAdmin)
+{
+    <a href="@Url.Action("Add", "ChargerGroup")" class="btn btn-primary">Create new</a>
+}
+
+<table class="table">
+    <thead>
+    <tr>
+        @if (isAdmin)
+        {
+            <th>Id</th>
+        }
+        <th>Name</th>
+        <th>Address</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var user in Model)
+    {
+        <tr>
+            @if (isAdmin)
+            {
+                <td>@user.Id</td>
+            }
+            <td>@user.Name</td>
+            <td>@user.Address</td>
+            <td>
+                <a href="@Url.Action("Detail", "ChargerGroup", new { id = user.Id })" class="btn btn-primary">Detail</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<div class="pagination">
+    @if (currentPage > 1)
+    {
+        <a href="?page=@(currentPage - 1)&pageSize=@pageSize">Previous</a>
+    }
+
+    <span>Page @currentPage of @totalPages</span>
+
+    @if (currentPage < totalPages)
+    {
+        <a href="?page=@(currentPage + 1)&pageSize=@pageSize">Next</a>
+    }
+</div>

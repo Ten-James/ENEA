@@ -18,6 +18,12 @@ public class Repository<T> : IRepository<T> where T : EntityBase
     {
         return _dbSet.CountAsync();
     }
+
+    public virtual IQueryable<T> GetAll()
+    {
+        return _dbSet;
+    }
+
     public virtual async Task<IEnumerable<T>> GetAllAsync(int offset, int size)
     {
         var skipped = _dbSet.Skip(offset);

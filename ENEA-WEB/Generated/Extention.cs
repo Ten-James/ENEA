@@ -1,6 +1,4 @@
-﻿using System.Net.Http.Headers;
-
-namespace Generated.Client;
+﻿namespace Generated.Client;
 
 public interface IPaginationResponse<T>
 {
@@ -30,15 +28,16 @@ public class UserReadDtoPaginationResponseWrapper(
 
 public partial class MyApiClient
 {
-    public void SetBearerToken(string token)
+    private readonly IHttpContextAccessor _contextAccessor;
+
+    public MyApiClient(string baseUrl, System.Net.Http.HttpClient httpClient, IHttpContextAccessor context): this(baseUrl, httpClient)
     {
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            _httpClient.DefaultRequestHeaders.Authorization = null;
-        }
-        else
-        {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        }
+        _contextAccessor = context;
+    }
+
+    partial void PrepareRequest(HttpClient client, HttpRequestMessage request, string url)
+    {
+        var token = _contextAccessor.HttpContext?.User?.FindFirst("JwtToken")?.Value;
+        request.Headers.Add("Authorization", "Bearer " + token);
     }
 }

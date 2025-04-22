@@ -58,9 +58,6 @@ namespace Api.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("ChangedBy")
-                        .HasColumnType("text");
-
                     b.Property<Guid>("ChargerId")
                         .HasColumnType("uuid");
 

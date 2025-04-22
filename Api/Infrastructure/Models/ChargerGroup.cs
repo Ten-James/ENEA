@@ -21,6 +21,7 @@ public class ChargerGroup : EntityBase
     public double Longitude { get; set; }
 
     [StringLength(500)]
+    [Required]
     public string Address { get; set; }
 
     // One station can have many chargers

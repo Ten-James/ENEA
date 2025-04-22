@@ -1,24 +1,27 @@
 ﻿using System.Collections;
 using System.ComponentModel;
 using System.Reflection;
-using System.Text.Json;
 
 namespace Main_Api.Helpers;
 
 internal static class DtoJsonSpecificationGenerator
 {
 
-    internal static string GenerateJsonSpecification<T>()
+    internal static object GenerateJsonSpecification<T>()
     {
         return GenerateJsonSpecification(typeof(T));
     }
 
-    internal static string GenerateJsonSpecification(Type type)
+    internal static object GenerateJsonSpecification(Type type)
     {
-        var properties = type.GetProperties().Select(prop => new { prop.Name, Type = GetTypeName(prop.PropertyType), Description = GetPropertySummary(prop) }).ToList();
+        if (type.IsEnum)
+        {
+            return type.GetEnumValues().Cast<object>().Select(v => new { Name = type.GetEnumName(v), Value = v });
+        }
 
-        JsonSerializerOptions options = new JsonSerializerOptions { WriteIndented = true };
-        return JsonSerializer.Serialize(properties, options);
+        return type.GetProperties()
+            .Select(prop => new { prop.Name, Type = GetTypeName(prop.PropertyType), Summary = GetPropertySummary(prop) })
+            .ToList();
     }
 
     internal static string GetTypeName(Type type)
@@ -33,7 +36,7 @@ internal static class DtoJsonSpecificationGenerator
         }
         if (typeof(IEnumerable).IsAssignableFrom(type) && type != typeof(string))
         {
-            Type elementType = type.GetGenericArguments().FirstOrDefault() ?? typeof(object);
+            var elementType = type.GetGenericArguments().FirstOrDefault() ?? typeof(object);
             return $"{elementType.Name}[]";
         }
         return type.Name;
@@ -41,7 +44,7 @@ internal static class DtoJsonSpecificationGenerator
 
     internal static string GetPropertySummary(PropertyInfo prop)
     {
-        DescriptionAttribute? attr = prop.GetCustomAttribute<DescriptionAttribute>();
+        var attr = prop.GetCustomAttribute<DescriptionAttribute>();
         return attr?.Description ?? "";
     }
 }

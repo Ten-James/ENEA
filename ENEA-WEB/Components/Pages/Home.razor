@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using Blazored.LocalStorage
 @using Generated.Client
 @inject ILogger<Home> Logger
 @inject MyApiClient client
@@ -19,8 +20,16 @@
         if (firstRender)
         {
             Logger.LogInformation("Loading map");
-            var groups = await client.ChargerGroupGETAsync(0, 0);
-            await LoadMap(groups.Items);
+            try
+            {
+                var groups = await client.ChargerGroupGETAsync(0, 0);
+                await LoadMap(groups.Items);
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
     }
 

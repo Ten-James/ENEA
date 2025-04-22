@@ -1,28 +1,27 @@
-﻿using Api.Infrastructure.Enums;
-using Api.Infrastructure.Models;
+﻿using Api.Infrastructure.Models;
 using Api.Infrastructure.Repositories.User;
+using BussinesLogic.Services;
 using Domain;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 namespace Main_Api.Controllers;
 
 [ApiController]
-[Route("/auth")]
+[Route("api/auth")]
 public class AuthController : ControllerBase
 {
+    private readonly AuthService _authService;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AuthController> _logger;
     private readonly IUserRepository _userRepository;
 
-    public AuthController(IConfiguration configuration, IUserRepository userRepository, ILogger<AuthController> logger)
+    public AuthController(IConfiguration configuration, IUserRepository userRepository, ILogger<AuthController> logger, AuthService authService)
     {
         _configuration = configuration;
         _userRepository = userRepository;
         _logger = logger;
+        _authService = authService;
     }
 
     [HttpPost]
@@ -48,38 +47,12 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
     {
         _logger.LogInformation("Logging in user with email: {Email}", request.Email);
-        var email = request.Email;
-        var password = request.Password;
-        var user = await _userRepository.GetByEmailAndPasswordAsync(email, password);
-        if (user == null)
+
+        var token = await _authService.Login(request.Email, request.Password);
+        if (token == null)
         {
-            return Unauthorized(new { Status = "Error", Message = "Invalid username or password" });
+            return Unauthorized(new { Status = "Error", Message = "Invalid credentials" });
         }
-
-
-        var authClaims = new List<Claim> { new Claim(ClaimTypes.Name, user.Email), new Claim("id", user.Id.ToString()), new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()) };
-
-        var userRoles = new List<string> { "User" };
-
-        if (user.Role == UserRole.Admin)
-        {
-            userRoles.Add("Admin");
-        }
-
-        foreach (var userRole in userRoles)
-        {
-            authClaims.Add(new Claim(ClaimTypes.Role, userRole));
-        }
-
-        var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
-
-        var token = new JwtSecurityToken(
-            _configuration["JWT:ValidIssuer"],
-            _configuration["JWT:ValidAudience"],
-            expires: DateTime.Now.AddHours(3),
-            claims: authClaims,
-            signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
-        );
 
         var strToken = new JwtSecurityTokenHandler().WriteToken(token);
         var response = new LoginResponse(strToken, token.ValidTo);

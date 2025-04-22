@@ -1,0 +1,30 @@
+﻿@using Api.Infrastructure.Enums
+@model GeneratedDtos.ChargerCreateDto
+
+@{
+    ViewData["Title"] = "Add Charger";
+}
+
+<h1>Add Charger</h1>
+
+<form asp-action="AddCharger" method="post">
+    <div class="form-group">
+        <label asp-for="ChargerCode" class="control-label"></label>
+        <input asp-for="ChargerCode" class="form-control"/>
+        <span asp-validation-for="ChargerCode" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="CurrentStatus" class="control-label"></label>
+        <select asp-for="CurrentStatus" class="form-control" asp-items="Html.GetEnumSelectList<ChargerStatus>()"></select>
+        <span asp-validation-for="CurrentStatus" class="text-danger"></span>
+    </div>
+    <input type="hidden" asp-for="ChargerGroupId"/>
+    <div class="form-group">
+        <button type="submit" class="btn btn-primary">Add Charger</button>
+        <a asp-action="Detail" asp-route-id="@Model.ChargerGroupId" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial"/>
+}

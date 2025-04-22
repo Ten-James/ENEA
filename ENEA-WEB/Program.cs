@@ -1,7 +1,7 @@
-using Blazored.LocalStorage;
 using ENEA.WEB.Components;
 using ENEA.WEB.Services;
 using Generated.Client;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using MudBlazor.Services;
 
@@ -13,13 +13,23 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddScoped<AuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<AuthStateProvider>());
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.Cookie.Name = "BlazorAuthApp";
+        options.Cookie.HttpOnly = true;
+        options.ExpireTimeSpan = TimeSpan.FromHours(3);
+        options.LoginPath = "/login";
+        options.SlidingExpiration = true;
+    });
 
-builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddMudServices();
 
 builder.Services.AddHttpClient();
+builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped(sp =>
-    new MyApiClient(builder.Configuration.GetConnectionString("API"), sp.GetRequiredService<HttpClient>()));
+    new MyApiClient(builder.Configuration.GetConnectionString("API"), sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<IHttpContextAccessor>()));
 
 var app = builder.Build();
 
@@ -32,6 +42,9 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseHttpsRedirection();
 

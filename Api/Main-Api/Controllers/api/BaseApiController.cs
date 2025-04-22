@@ -12,6 +12,9 @@ namespace Main_Api.Controllers;
 public class BaseApiController<T, TReadDto, TDetailDto, TCreateDto, TUpdateDto> : ControllerBase
     where T : EntityBase
 {
+
+    protected Guid UserId => Guid.Parse(HttpContext.User.Claims.FirstOrDefault(c => c.Type == "id")!.Value);
+
     private readonly IService<T, TReadDto, TDetailDto, TCreateDto, TUpdateDto> _service;
 
     public BaseApiController(IService<T, TReadDto, TDetailDto, TCreateDto, TUpdateDto> service)
