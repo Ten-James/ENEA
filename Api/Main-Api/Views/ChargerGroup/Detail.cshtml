@@ -12,10 +12,13 @@
 <table class="table">
     <tbody>
 
-    <tr>
-        <th>Id</th>
-        <td colspan="2">@Model.Id</td>
-    </tr>
+    @if (isAdmin)
+    {
+        <tr>
+            <th>Id</th>
+            <td colspan="2">@Model.Id</td>
+        </tr>
+    }
     <tr>
         <th>Name</th>
         <td colspan="2">@Model.Name</td>
@@ -42,6 +45,11 @@
                         <input type="hidden" name="groupId" value="@Model.Id"/>
                         <button type="submit" class="btn btn-danger">Remove</button>
                     </form>
+                </td>
+            }
+            else
+            {
+                <td>
                 </td>
             }
         </tr>
@@ -72,6 +80,7 @@
                 {
                     <a href="@Url.Action("StartCharging", "ChargerGroup", new { chargerId = charger.Id, groupId = Model.Id })" class="btn btn-primary">Start Charging</a>
                 }
+
                 @if (isAdmin)
                 {
                     if (charger.CurrentStatus == ChargerStatus.OutOfOrder)
@@ -99,4 +108,7 @@
 </table>
 
 <a href="@Url.Action("Index", "ChargerGroup")" class="btn btn-secondary">Back to List</a>
-<a href="@Url.Action("Edit", "ChargerGroup", new { id = Model.Id })" class="btn btn-primary">Edit</a>
+@if (isAdmin)
+{
+    <a href="@Url.Action("Edit", "ChargerGroup", new { id = Model.Id })" class="btn btn-primary">Edit</a>
+}

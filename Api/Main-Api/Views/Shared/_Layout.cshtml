@@ -30,9 +30,12 @@
                     }
                     else
                     {
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index">Users</a>
-                        </li>
+                        @if ((Boolean)(ViewData["isAdmin"] ?? false))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index">Users</a>
+                            </li>
+                        }
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="ChargerGroup" asp-action="Index">Charger Group</a>
                         </li>
