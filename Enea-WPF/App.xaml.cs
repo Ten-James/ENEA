@@ -1,4 +1,5 @@
-﻿using Generated.Client;
+﻿using Enea_WPF.Pages;
+using Generated.Client;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http;
 using System.Windows;
@@ -16,18 +17,24 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        var serviceCollection = new ServiceCollection();
-        ConfigureServices(serviceCollection);
-
-        ServiceProvider = serviceCollection.BuildServiceProvider();
-        var loginWindow = ServiceProvider.GetRequiredService<LoginPage>();
-        loginWindow.Show();
+        ServiceProvider = ConfigureServices();
+        var mainWindow = ServiceProvider.GetRequiredService<LoginPage>();
+        mainWindow.Show();
     }
 
-    private void ConfigureServices(IServiceCollection services)
+    private IServiceProvider ConfigureServices()
     {
-        services.AddSingleton(sp => new MyApiClient("http://localhost:5012", new HttpClient()));
-        services.AddTransient<LoginPage>();
+        var services = new ServiceCollection();
 
+        services.AddSingleton(sp => new MyApiClient("http://localhost:5012", new HttpClient()));
+        services.AddSingleton<LoginPage>();
+        services.AddSingleton<UserListPage>();
+        services.AddSingleton<ChargingGroupListPage>();
+        services.AddSingleton<MainWindow>();
+        services.AddSingleton<StatsPage>();
+        services.AddSingleton<EventsPage>();
+        services.AddSingleton<ChargerListPage>();
+
+        return services.BuildServiceProvider();
     }
 }

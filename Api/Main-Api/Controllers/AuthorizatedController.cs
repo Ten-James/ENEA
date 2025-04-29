@@ -40,7 +40,7 @@ public class AuthorizatedController(
         base.OnActionExecuting(context);
         var isAdmin = UserRoles?.Split(',').Contains("Admin") == true;
 
-        //ViewData["isAdmin"] = isAdmin;
+        ViewData["isAdmin"] = isAdmin;
     }
 
     private void SetNoCacheHeaders()

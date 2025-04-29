@@ -1,16 +1,17 @@
 ﻿using Generated.Client;
 using System.Windows;
-using System.Windows.Controls;
 
 namespace Enea_WPF;
 
 public partial class LoginPage : Window
 {
     private readonly MyApiClient _apiClient;
-    public LoginPage(MyApiClient apiClient)
+    private readonly MainWindow _mainWindow;
+    public LoginPage(MyApiClient apiClient, MainWindow mainWindow)
     {
         InitializeComponent();
         _apiClient = apiClient;
+        _mainWindow = mainWindow;
     }
 
     private async void btnLogin_Click(object sender, RoutedEventArgs e)
@@ -35,14 +36,9 @@ public partial class LoginPage : Window
 
             if (result != null && !string.IsNullOrEmpty(result.Token))
             {
-                // Store token in shared memory
-
-                // Open user management page
-                //var userPage = App.ServiceProvider.GetRequiredService<UserManagementPage>();
-                //userPage.Show();
-
-                // Close login window
-                //this.Close();
+                _apiClient.SetToken(result.Token);
+                _mainWindow.Show();
+                Close();
             }
             else
             {

@@ -2,6 +2,8 @@ using Api.Infrastructure;
 using Api.Infrastructure.Models;
 using Api.Infrastructure.Repositories;
 using Api.Infrastructure.Repositories.User;
+using BusinessLogic.Interfaces;
+using BusinessLogic.Services;
 using BussinesLogic.Services;
 using Domain;
 using Main_Api.Helpers;
@@ -97,6 +99,7 @@ public class Program
         builder.Services.AddScoped<IUserRepository, UserRepository>();
         builder.Services.AddScoped<IRepository<Charger>, ChargerRepository>();
         builder.Services.AddScoped<AuthService>();
+        builder.Services.AddScoped<IStatService, StatService>();
         builder.Services.AddScoped<ChargerService>();
         builder.Services.AddScoped(typeof(IRepository<ChargerGroup>), typeof(ChargerGroupRepository));
         builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
@@ -120,18 +123,21 @@ public class Program
         app.UseHttpsRedirection();
 
         app.UseMiddleware<ErrorMiddleware>();
+        app.MapControllerRoute(
+            "default",
+            "{controller=Home}/{action=Index}/{id?}");
 
+        app.UseRouting();
+
+        app.UseAuthentication();
         app.UseAuthorization();
+
         app.UseSession();
 
         app.MapControllers();
 
 
-        app.UseRouting();
         app.UseStaticFiles();
-        app.MapControllerRoute(
-            "default",
-            "{controller=Home}/{action=Index}/{id?}");
 
         app.Run();
     }

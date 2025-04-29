@@ -1,0 +1,27 @@
+﻿<Window x:Class="Enea_WPF.Modals.ChargerModal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Charger Modal" Height="400" Width="400" WindowStartupLocation="CenterOwner">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="10">
+            <TextBlock Text="Charger Code:" Margin="0,0,0,5" />
+            <TextBox x:Name="ChargerCodeTextBox" Margin="0,0,0,10" />
+
+            <TextBlock Text="Charger Group:" Margin="0,0,0,5" />
+            <ComboBox x:Name="ChargerGroupComboBox" DisplayMemberPath="Name" SelectedValuePath="Id" Margin="0,0,0,10" />
+
+            <TextBlock Text="Charger Status:" Margin="0,0,0,5" />
+            <ComboBox x:Name="ChargerStatusComboBox" Margin="0,0,0,10" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
+            <Button Content="Save" Width="75" Margin="5" Click="SaveButton_Click" />
+            <Button Content="Cancel" Width="75" Margin="5" Click="CancelButton_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

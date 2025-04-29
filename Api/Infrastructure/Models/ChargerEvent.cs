@@ -16,6 +16,7 @@ public class ChargerEvent : EntityBase
     public Guid ChargerId { get; set; }
 
     [ForeignKey("ChargerId")]
+    [DtoIgnore]
     public virtual Charger Charger { get; set; }
 
     [Required]
@@ -24,6 +25,7 @@ public class ChargerEvent : EntityBase
     [Required]
     public DateTime StartTime { get; set; }
 
+    [DtoIgnore]
     public DateTime? EndTime { get; set; }
 
     [NotMapped]
@@ -51,5 +53,6 @@ public class ChargerEvent : EntityBase
     [Column(TypeName = "decimal(18,2)")]
     public double? EnergyConsumed { get; set; } // in kWh
 
+    [DtoIgnore]
     public bool IsCompleted { get; set; }
 }

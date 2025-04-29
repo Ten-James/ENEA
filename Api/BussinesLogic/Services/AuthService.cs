@@ -1,4 +1,5 @@
 ﻿using Api.Infrastructure.Enums;
+using Api.Infrastructure.Models;
 using Api.Infrastructure.Repositories.User;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -14,6 +15,17 @@ public class AuthService(
     IUserRepository userRepository,
     ILogger<AuthService> logger)
 {
+    public async Task<bool> Register(string email, string password)
+    {
+        var userExists = await userRepository.GetByEmailAsync(email);
+        if (userExists != null)
+        {
+            return false;
+        }
+
+        var result = await userRepository.AddAsync(new User { Email = email, Password = password, Name = email });
+        return true;
+    }
 
     public async Task<JwtSecurityToken?> Login(string email, string password)
     {

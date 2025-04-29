@@ -29,15 +29,12 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Register([FromBody] LoginRequest request)
     {
         _logger.LogInformation("Registering user with email: {Email}", request.Email);
-        var email = request.Email;
-        var password = request.Password;
-        var userExists = await _userRepository.GetByEmailAsync(email);
-        if (userExists != null)
+
+        var created = await _authService.Register(request.Email, request.Password);
+        if (!created)
         {
             return StatusCode(409, new { Status = "Error", Message = "User already exists!" });
         }
-
-        var result = await _userRepository.AddAsync(new User { Email = email, Password = password, Name = email });
 
         return Ok(new { Status = "Success", Message = "User created successfully!" });
     }

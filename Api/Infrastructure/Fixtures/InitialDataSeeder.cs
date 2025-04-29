@@ -1,5 +1,6 @@
 ﻿using Api.Infrastructure.Enums;
 using Api.Infrastructure.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Api.Infrastructure.Fixtures;
@@ -148,105 +149,218 @@ public static class InitialDataSeeder
     }
 
     /// <summary>
-    ///     Seeds charger events (status changes and charging sessions) with mock data
+    ///     Seeds charger events (status changes and charging sessions) with mock data,
+    ///     simulating realistic sequences over the past year, based on charger status transitions.
     /// </summary>
     private static void SeedChargerEvents(ENEADbContext context)
     {
-        var chargers = context.Chargers.ToList();
-        var users = context.Users.Take(10).ToList();
+        var chargers = context.Chargers.Include(c => c.ChargerGroup).ToList(); // Include group for potential context
+        var customers = context.Users.Take(10).ToList();
         var technicians = context.Users.Skip(10).ToList();
         var events = new List<ChargerEvent>();
         var random = new Random();
 
-        // Generate random events for each charger
+        // Constants for realistic calculations (adjust as needed)
+        const double minEnergyRatePerHour = 7.0; // Min kWh per hour
+        const double maxEnergyRatePerHour = 22.0; // Max kWh per hour (typical AC charger range)
+        const double pricePerKWh = 0.20; // Price per kWh (consistent with ChargerService)
+        var simulationStartDate = DateTime.UtcNow.AddYears(-1).AddDays(-random.Next(1, 30)); // Start simulation ~1 year ago
+
+        if (!customers.Any())
+        {
+            Console.WriteLine("Warning: No customer users found for seeding charging sessions.");
+
+            // Optionally handle this case, e.g., skip session generation or use other users
+        }
+        if (!technicians.Any())
+        {
+            Console.WriteLine("Warning: No technician or admin users found for seeding maintenance events.");
+
+            // Optionally handle this case, e.g., skip maintenance simulation
+        }
+
         foreach (var charger in chargers)
         {
-            // Generate status change history (5-10 events per charger)
-            var statusChangeCount = random.Next(5, 11);
-            var currentDate = DateTime.UtcNow.AddDays(-30); // Start from 30 days ago
-            var previousStatus = ChargerStatus.Available;
+            var currentTime = simulationStartDate;
 
-            for (var i = 0; i < statusChangeCount; i++)
+            // Start with a plausible initial status, maybe Available or OutOfOrder briefly
+            var currentStatus = random.NextDouble() < 0.8 ? ChargerStatus.Available : ChargerStatus.OutOfOrder;
+            charger.CurrentStatus = currentStatus; // Set initial status for the simulation start
+
+            ChargerEvent? activeSessionStartEvent = null; // Track the start event of an ongoing session
+
+            // Simulate events until the present time
+            while (currentTime < DateTime.UtcNow)
             {
-                // Advance time by 1-48 hours
-                currentDate = currentDate.AddHours(random.Next(1, 49));
+                // Advance time randomly: 15 minutes to 2 days (more variability)
+                var timeToAdd = TimeSpan.FromMinutes(random.Next(15, 2 * 24 * 60));
+                var nextEventTime = currentTime.Add(timeToAdd);
 
-                // Get a new status different from the previous one
-                var newStatus = GetDifferentStatus(previousStatus);
-
-                // Get a random technician
-                var technician = technicians[random.Next(technicians.Count)];
-
-                events.Add(new ChargerEvent
+                // Ensure simulation doesn't go beyond the present
+                if (nextEventTime >= DateTime.UtcNow)
                 {
-                    Id = Guid.NewGuid(),
-                    ChargerId = charger.Id,
-                    EventType = EventType.StatusChange,
-                    StartTime = currentDate,
-                    EndTime = currentDate, // For status changes, start and end times are the same
-                    OldStatus = previousStatus,
-                    NewStatus = newStatus,
-                    UserId = technician.Id,
-                    Notes = GetRandomStatusNote(previousStatus, newStatus)
-                });
+                    nextEventTime = DateTime.UtcNow;
+                }
 
-                previousStatus = newStatus;
+                // Decide next event based on current status
+                switch (currentStatus)
+                {
+                    case ChargerStatus.Available:
+                        // Higher chance to start charging if customers exist, small chance for maintenance
+                        var availableAction = random.NextDouble();
+                        if (availableAction < 0.6 && customers.Any()) // Start Charging
+                        {
+                            var user = customers[random.Next(customers.Count)];
+                            var oldStatus = currentStatus;
+                            currentStatus = ChargerStatus.Charging;
+                            currentTime = nextEventTime; // Event happens at this time
+
+                            activeSessionStartEvent = new ChargerEvent
+                            {
+                                Id = Guid.NewGuid(),
+                                ChargerId = charger.Id,
+                                EventType = EventType.ChargingSession, // Log session start
+                                StartTime = currentTime,
+                                EndTime = null, // Not ended yet
+                                SessionStatus = ChargingSessionStatus.InProgress,
+                                OldStatus = oldStatus, // Status before this event
+                                NewStatus = currentStatus, // Status after this event
+                                UserId = user.Id,
+                                IsCompleted = false,
+                                Notes = "Charging session initiated."
+                            };
+                            events.Add(activeSessionStartEvent);
+                        }
+                        else if (availableAction < 0.65 && technicians.Any()) // Go to Maintenance (lower chance)
+                        {
+                            var user = technicians[random.Next(technicians.Count)];
+                            var oldStatus = currentStatus;
+                            currentStatus = ChargerStatus.OutOfOrder;
+                            currentTime = nextEventTime; // Event happens at this time
+
+                            events.Add(new ChargerEvent
+                            {
+                                Id = Guid.NewGuid(),
+                                ChargerId = charger.Id,
+                                EventType = EventType.StatusChange,
+                                StartTime = currentTime,
+                                EndTime = currentTime, // Status change is instantaneous
+                                OldStatus = oldStatus,
+                                NewStatus = currentStatus,
+                                UserId = user.Id,
+                                Notes = GetRandomStatusNote(oldStatus, currentStatus) // Generate maintenance reason
+                            });
+                        }
+                        else // Stays Available
+                        {
+                            currentTime = nextEventTime; // Advance time, no event logged
+                        }
+                        break;
+
+                    case ChargerStatus.Charging:
+                        // Must stop charging eventually
+                        if (activeSessionStartEvent != null)
+                        {
+                            var oldStatus = currentStatus;
+                            currentStatus = ChargerStatus.Available; // Becomes available after charging
+                            currentTime = nextEventTime; // Event happens at this time
+
+                            // Calculate duration, energy, cost
+                            var endTime = currentTime;
+                            var duration = endTime - activeSessionStartEvent.StartTime;
+
+                            // Ensure minimum duration (e.g., 5 mins) to avoid tiny/negative values if time jumps are small
+                            if (duration < TimeSpan.FromMinutes(5))
+                            {
+                                duration = TimeSpan.FromMinutes(random.Next(5, 15));
+                            }
+                            var durationHours = duration.TotalHours;
+
+                            var energyRate = minEnergyRatePerHour + random.NextDouble() * (maxEnergyRatePerHour - minEnergyRatePerHour);
+                            var energyConsumed = Math.Max(0, Math.Round(durationHours * energyRate, 2)); // Ensure non-negative
+                            var totalPrice = Math.Max(0, Math.Round(energyConsumed * pricePerKWh, 2)); // Ensure non-negative
+
+                            // Update the original session start event
+                            activeSessionStartEvent.EndTime = endTime;
+                            activeSessionStartEvent.EnergyConsumed = energyConsumed;
+                            activeSessionStartEvent.TotalPrice = totalPrice;
+                            activeSessionStartEvent.SessionStatus = ChargingSessionStatus.Completed;
+                            activeSessionStartEvent.IsCompleted = true;
+                            activeSessionStartEvent.Notes = $"Session completed. Charged {energyConsumed:F2} kWh. Cost: {totalPrice:C2}";
+
+                            // We are updating the existing event object in the 'events' list
+
+                            // ChargerService logs a separate event for stop; mimic that if desired
+                            // events.Add(new ChargerEvent { ... EventType = EventType.StatusChange, OldStatus = oldStatus, NewStatus = currentStatus ... });
+
+                            activeSessionStartEvent = null; // Clear active session
+                        }
+                        else
+                        {
+                            // Defensive: If somehow in Charging state without an active session, force to Available
+                            currentStatus = ChargerStatus.Available;
+                            currentTime = nextEventTime; // Advance time
+                        }
+                        break;
+
+                    case ChargerStatus.OutOfOrder:
+                        // Must become Available after some time (maintenance duration)
+                        // Higher chance to become available if technicians exist
+                        if (random.NextDouble() < 0.9 && technicians.Any())
+                        {
+                            var user = technicians[random.Next(technicians.Count)];
+                            var oldStatus = currentStatus;
+                            currentStatus = ChargerStatus.Available;
+                            currentTime = nextEventTime; // Event happens at this time
+
+                            events.Add(new ChargerEvent
+                            {
+                                Id = Guid.NewGuid(),
+                                ChargerId = charger.Id,
+                                EventType = EventType.StatusChange,
+                                StartTime = currentTime,
+                                EndTime = currentTime,
+                                OldStatus = oldStatus,
+                                NewStatus = currentStatus,
+                                UserId = user.Id,
+                                Notes = GetRandomStatusNote(oldStatus, currentStatus) // Generate maintenance completion note
+                            });
+                        }
+                        else // Stays OutOfOrder
+                        {
+                            currentTime = nextEventTime; // Advance time, no event logged
+                        }
+                        break;
+                }
+
+                // Break if we have simulated past the current time
+                if (currentTime >= DateTime.UtcNow)
+                {
+                    break;
+                }
             }
 
-            // Generate charging sessions (10-20 per charger)
-            var sessionCount = random.Next(10, 21);
-            currentDate = DateTime.UtcNow.AddDays(-30); // Reset to 30 days ago
+            // Update the charger's final status based on the end of the simulation
+            charger.CurrentStatus = currentStatus;
 
-            for (var i = 0; i < sessionCount; i++)
+            // If a session was still active at the end of the simulation, mark it as InProgress
+            // and ensure the charger's final status reflects this.
+            if (activeSessionStartEvent != null && activeSessionStartEvent.EndTime == null)
             {
-                // Advance time by 3-24 hours
-                currentDate = currentDate.AddHours(random.Next(3, 25));
+                charger.CurrentStatus = ChargerStatus.Charging;
 
-                // Session duration between 15 minutes and 4 hours
-                var durationMinutes = random.Next(15, 241);
-                var endTime = currentDate.AddMinutes(durationMinutes);
-
-                // Calculate random energy consumed and price
-                var energyConsumed = Math.Round(random.NextDouble() * 50 + 5, 2); // 5-55 kWh
-                var totalPrice = Math.Round(energyConsumed * (random.NextDouble() * 2 + 6), 2); // 6-8 per kWh
-
-                var sessionStatus = GetRandomSessionStatus();
-                var isCompleted = sessionStatus != ChargingSessionStatus.InProgress;
-
-                // Get a random customer
-                var customer = users[random.Next(users.Count)];
-
-                events.Add(new ChargerEvent
-                {
-                    Id = Guid.NewGuid(),
-                    ChargerId = charger.Id,
-                    EventType = EventType.ChargingSession,
-                    StartTime = currentDate,
-                    EndTime = isCompleted ? endTime : null,
-                    SessionStatus = sessionStatus,
-                    TotalPrice = isCompleted ? totalPrice : null,
-                    EnergyConsumed = isCompleted ? energyConsumed : null,
-                    IsCompleted = isCompleted,
-                    UserId = customer.Id
-                });
+                // Optionally add a note indicating it was ongoing at simulation end
+                activeSessionStartEvent.Notes += " (Session ongoing at data generation time)";
             }
         }
 
         context.ChargerEvents.AddRange(events);
+
+        // Save events first
         context.SaveChanges();
 
-        // Update chargers' current status based on the last status change
-        foreach (var charger in chargers)
-        {
-            var lastStatusChange = events
-                .Where(e => e.ChargerId == charger.Id && e.EventType == EventType.StatusChange).MaxBy(e => e.StartTime);
-
-            if (lastStatusChange != null && lastStatusChange.NewStatus.HasValue)
-            {
-                charger.CurrentStatus = lastStatusChange.NewStatus.Value;
-            }
-        }
-
+        // Update charger entities with their final simulated status
+        // EF Core tracks changes to the 'chargers' list objects
         context.SaveChanges();
     }
 

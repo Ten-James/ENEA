@@ -1,0 +1,92 @@
+﻿@using System.Globalization
+@using System.Text.Json
+@model Dictionary<String, Domain.MonthStatDto>
+
+@{
+    ViewData["Title"] = "Monthly Statistics";
+
+    var labels = Model.Keys.Select(k => DateTime.ParseExact(k + "-01", "yyyy-MM-dd", CultureInfo.InvariantCulture).ToString("MMMM yyyy")).ToArray();
+    var chargedData = Model.Values.Select(v => v.TotalCharged).ToArray();
+    var costData = Model.Values.Select(v => v.TotalCost).ToArray();
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<div style="width: 80%; margin: auto;">
+    <canvas id="statsChart"></canvas>
+</div>
+
+<hr/>
+
+<h3>Detailed Data</h3>
+<table class="table table-striped table-bordered">
+    <thead class="thead-dark">
+    <tr>
+        <th>Month</th>
+        <th>Total Charged (kWh)</th>
+        <th>Total Cost (€)</th>
+    </tr>
+    </thead>
+    <tbody>
+    @if (Model.Any())
+    {
+        foreach (var kvp in Model)
+        {
+            <tr>
+                <td>@DateTime.ParseExact(kvp.Key + "-01", "yyyy-MM-dd", CultureInfo.InvariantCulture).ToString("MMMM yyyy")</td>
+                <td>@kvp.Value.TotalCharged.ToString("F2")</td>
+                <td>@kvp.Value.TotalCost.ToString("C", CultureInfo.GetCultureInfo("en-IE"))</td> @* Example: Euro formatting *@
+            </tr>
+        }
+    }
+    else
+    {
+        <tr>
+            <td colspan="3" class="text-center">No statistics available.</td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('statsChart').getContext('2d');
+        const statsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(JsonSerializer.Serialize(labels)),
+                datasets: [{
+                    label: 'Total Charged (kWh)',
+                    data: @Html.Raw(JsonSerializer.Serialize(chargedData)),
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)', // Blue
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Total Cost (€)',
+                    data: @Html.Raw(JsonSerializer.Serialize(costData)),
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)', // Red
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Monthly Charging Statistics'
+                    }
+                }
+            }
+        });
+    </script>
+}
